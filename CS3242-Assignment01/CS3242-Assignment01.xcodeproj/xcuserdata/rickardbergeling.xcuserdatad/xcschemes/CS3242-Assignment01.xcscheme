@@ -61,6 +61,20 @@
             ReferencedContainer = "container:CS3242-Assignment01.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = "/Users/rickardbergeling/GitHub/CS3242-3D-Modeling-and-Animation/CS3242-Assignment01/CS3242-Assignment01/data/pyramid.mesh"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "/Users/rickardbergeling/GitHub/CS3242-3D-Modeling-and-Animation/CS3242-Assignment01/CS3242-Assignment01/data/output.mesh"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "300"
+            isEnabled = "YES">
+         </CommandLineArgument>
+      </CommandLineArguments>
       <AdditionalOptions>
       </AdditionalOptions>
    </LaunchAction>

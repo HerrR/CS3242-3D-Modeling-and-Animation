@@ -22,17 +22,24 @@ typedef struct{
 	uint a,b,c;
 } Face;
 
-//data structure of Halfedge
-typedef struct {
-	//add members here
+struct HEVertex; struct HEFace; struct HEEdge;
+
+typedef struct HEVertex{
+    float x;
+    float y;
+    float z;
+    HEEdge* edge;  // Outgoing halfedge
 } HEVertex;
 
-typedef struct {
-	//add members here
+typedef struct HEEdge {
+    HEVertex* vert;   // Vertex it points to
+    HEEdge* twin;   // Oppositely oriented adjacent halfedge
+    HEFace* face;   // Adjacent face
+    HEEdge* next;   // Next halfedge around the face
 } HEEdge;
 
-typedef struct {
-	//add members here
+typedef struct HEFace {
+    HEEdge* edge;  // one of the halfedges bordering the face
 } HEFace;
 
 class Mesh{
