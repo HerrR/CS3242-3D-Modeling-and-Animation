@@ -6,17 +6,81 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "CS3242-Assignment01/Mesh.cpp"
+            timestampString = "478633839.212585"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "106"
+            endingLineNumber = "106"
+            landmarkName = "Mesh::convertMesh()"
+            landmarkType = "5">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "CS3242-Assignment01/Mesh.cpp"
-            timestampString = "478630395.708822"
+            timestampString = "478668043.014016"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "192"
-            endingLineNumber = "192"
-            landmarkName = "Mesh::neighborVertices(HEVertex v)"
+            startingLineNumber = "64"
+            endingLineNumber = "64"
+            landmarkName = "Mesh::simplifyMesh(const char* input, const char* output, int faceCnt)"
             landmarkType = "5">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "CS3242-Assignment01/Mesh.cpp"
+            timestampString = "478670918.53416"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "181"
+            endingLineNumber = "181"
+            landmarkName = "Mesh::convertMesh()"
+            landmarkType = "5">
+            <Locations>
+               <Location
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Mesh::convertMesh()"
+                  moduleName = "CS3242-Assignment01"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/rickardbergeling/GitHub/CS3242-3D-Modeling-and-Animation/CS3242-Assignment01/CS3242-Assignment01/Mesh.cpp"
+                  timestampString = "478670918.849414"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "194"
+                  endingLineNumber = "194"
+                  offsetFromSymbolStart = "7951">
+               </Location>
+               <Location
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "Mesh::convertMesh()"
+                  moduleName = "CS3242-Assignment01"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/rickardbergeling/GitHub/CS3242-3D-Modeling-and-Animation/CS3242-Assignment01/CS3242-Assignment01/Mesh.cpp"
+                  timestampString = "478670918.849708"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "194"
+                  endingLineNumber = "194"
+                  offsetFromSymbolStart = "7966">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

@@ -63,7 +63,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "/Users/rickardbergeling/GitHub/CS3242-3D-Modeling-and-Animation/CS3242-Assignment01/CS3242-Assignment01/data/pyramid.mesh"
+            argument = "/Users/rickardbergeling/GitHub/CS3242-3D-Modeling-and-Animation/CS3242-Assignment01/CS3242-Assignment01/data/pyramidCentered.mesh"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

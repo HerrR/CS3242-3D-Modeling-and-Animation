@@ -71,8 +71,6 @@ void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
     cout << "Simplify mesh here..."<<endl;
     
     cout<< "Output face count: " << HEF.size()<<endl;
-
-    vector<HEVertex> mjao = neighborVertices(HEV[1]);
     
     cout << "Reverting mesh..." << endl;
 	revertMesh();
@@ -107,9 +105,7 @@ void Mesh::convertMesh()
     for (int i = 0; i < F.size(); i++) {
         // Create 3 HE Edges and one HE Face
         HEFace f;
-        HEEdge e1;
-        HEEdge e2;
-        HEEdge e3;
+        HEEdge e1, e2, e3;
 
         // Push edges to HEE Vector and face to HEF vector.
         HEF.push_back(f);
@@ -126,6 +122,9 @@ void Mesh::convertMesh()
         int eIndex1 = (int)HEE.size()-3;
         int eIndex2 = (int)HEE.size()-2;
         int eIndex3 = (int)HEE.size()-1;
+        
+        cout << "Vertex indexes: " << vIndex1 << ", " << vIndex2 << ", " << vIndex3 << endl;
+        cout << "Edge indexes: " << eIndex1 << ", " << eIndex2 << ", " << eIndex3 << endl;
         
         // Add adjacent edge to face
         HEF[HEF.size()-1].edge = &HEE[eIndex1];
@@ -145,6 +144,11 @@ void Mesh::convertMesh()
         HEE[eIndex2].face = &HEF[HEF.size()-1];
         HEE[eIndex3].face = &HEF[HEF.size()-1];
         
+        // Assign null twins
+        HEE[eIndex1].twin = NULL;
+        HEE[eIndex2].twin = NULL;
+        HEE[eIndex3].twin = NULL;
+        
         // Assign next for each HE
         HEE[eIndex1].next = &HEE[eIndex2];
         HEE[eIndex2].next = &HEE[eIndex3];
@@ -154,27 +158,38 @@ void Mesh::convertMesh()
         HasOriginAt[eIndex1] = vIndex1;
         HasOriginAt[eIndex2] = vIndex2;
         HasOriginAt[eIndex3] = vIndex3;
-        
+
         // Update which index the edges are pointing to
         IsPointingTo[eIndex1] = vIndex2;
         IsPointingTo[eIndex2] = vIndex3;
         IsPointingTo[eIndex3] = vIndex1;
-        
+
         // Update PointedAtBy map.
         PointedAtBy[vIndex2].push_back(eIndex1);
         PointedAtBy[vIndex3].push_back(eIndex2);
         PointedAtBy[vIndex1].push_back(eIndex3);
+        
     }
     
-    // Loop through the half edge list, given a half edge, find its origin using the map
     for (int i = 0; i < HEE.size(); i++) {
-        for(int j = 0; j < PointedAtBy[HasOriginAt[i]].size(); j++){
-            if(HasOriginAt[PointedAtBy[HasOriginAt[i]][j]] == IsPointingTo[i]){
-                HEE[i].twin = &HEE[PointedAtBy[HasOriginAt[i]][j]];
-                break;
-            }
-        }
+        cout << &HEE[i] << endl;
+        cout << &HEE[i].next << endl;
+        cout << &HEE[i].next->next << endl;
+        cout << &HEE[i].next->next->next << endl << endl;
     }
+    
+////     Loop through the half edge list, given a half edge, find its origin using the map
+//    for (int i = 0; i < HEE.size(); i++) {
+//        
+//        for(int j = 0; j < PointedAtBy[HasOriginAt[i]].size(); j++){
+//            if(HasOriginAt[PointedAtBy[HasOriginAt[i]][j]] == IsPointingTo[i]){
+//                cout << "Twin found for HEE["<<i<<"] as HEE[" << PointedAtBy[HasOriginAt[i]][j] << "]" <<endl;
+//                HEE[i].twin = &HEE[PointedAtBy[HasOriginAt[i]][j]];
+////                HEE[PointedAtBy[HasOriginAt[i]][j]].twin = &HEE[i];
+//            }
+//        }
+//    }
+    
 }
 
 void Mesh::revertMesh()
@@ -190,11 +205,6 @@ vector<HEVertex> Mesh::neighborVertices(HEVertex v)
     // NeighborVertices of a vertex v, returns a vector of HEVertexes
     // Look at what is in the end of each outgoing half edge vertex
     vector<HEVertex> neighbours;
-    HEVertex next1 = *v.edge->vert;
-    HEVertex next2 = *v.edge->twin->next->vert;
-    cout << &next2.edge << endl;
-
-
 
     return neighbours;
 }
