@@ -7,6 +7,8 @@
 #include <string>
 #include <sstream>
 
+using namespace std;
+
 typedef unsigned int uint;
 
 //data structure of indexed face set
@@ -28,6 +30,7 @@ typedef struct HEVertex{
     float x;
     float y;
     float z;
+    int id;
     HEEdge* edge;  // Outgoing halfedge
 } HEVertex;
 
@@ -36,20 +39,22 @@ typedef struct HEEdge {
     HEEdge* twin;   // Oppositely oriented adjacent halfedge
     HEFace* face;   // Adjacent face
     HEEdge* next;   // Next halfedge around the face
+    int id;
 } HEEdge;
 
 typedef struct HEFace {
     HEEdge* edge;  // one of the halfedges bordering the face
+    int id;
 } HEFace;
 
 class Mesh{
 private:
-	std::vector<Vertex> V;
-	std::vector<Face> F;
+	vector<Vertex> V;
+	vector<Face> F;
 
-	std::vector<HEVertex> HEV;
-	std::vector<HEEdge> HEE;
-	std::vector<HEFace> HEF;
+	vector<HEVertex*> HEV;
+	vector<HEEdge*> HEE;
+	vector<HEFace*> HEF;
 public:
 	Mesh() {};
 	Mesh(const char*);
@@ -61,12 +66,15 @@ public:
 	void simplifyMesh(const char* input, const char* output, int faceCnt);
 	//turn indexed face set to halfedge
 	void convertMesh();
+    // Collapse edge
+    void collapseEdge(HEEdge e);
 	//turn halfedge to indexed face set
 	void revertMesh();
 	//helper methods
-	std::vector<HEVertex> neighborVertices(HEVertex v);
-	std::vector<HEFace> neighborFaces(HEVertex v);
-	std::vector<HEVertex> adjacentVertices(HEFace f);
+    vector<HEEdge> neighborEdges(HEFace *f);
+	vector<HEVertex> neighborVertices(HEVertex v);
+	vector<HEFace> neighborFaces(HEVertex v);
+	vector<HEVertex> adjacentVertices(HEFace f);
 	//return vertex count
 	int Vcnt();
 	//return face count
