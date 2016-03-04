@@ -1,15 +1,27 @@
 #include "Mesh.h"
+#include "Eigen/Dense"
 #include <typeinfo>
 #include <map>
 #include <algorithm>
 
 // * Pekare (Peka på vart objektet ligger)
 // & Referens (modifiera objektet direkt)
+// http://eigen.tuxfamily.org/dox/group__TutorialMatrixArithmetic.html#title6
 
 using namespace std;
 
-Mesh::Mesh(const char* filename){	
-	loadMF(filename);
+typedef struct {
+    float Q;
+    HEEdge* e;
+} EQTuple;
+
+
+
+
+bool tupleSort(EQTuple i, EQTuple j) { return (i.Q<j.Q); }
+
+Mesh::Mesh(const char* filename){
+    loadMF(filename);
 }
 
 void Mesh::loadMF(const char* filename){
@@ -55,6 +67,7 @@ void Mesh::writeMF(const char* filename){
 }
 
 void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
+    
 	// you may assume inputs are always valid
     cout << "Loading mesh... \n";
 	loadMF(input);
@@ -69,13 +82,77 @@ void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
     cout << "Original face count: " << HEF.size() << endl;
 	// do mesh simplification here
     
-//    collapseEdge(*HEE[6]);
-    int nextDeletion;
-    srand((int)time(0));
+    // Map with all the vertex IDs and their error quadric
+    map<int, Eigen::Matrix4f> errorQuadricsMap;
+    
+    // For each vertex in the mesh
+    for(int i = 0; i < HEV.size() ; i++){
+        // Get the neighbouring faces
+        vector<HEFace> neighborFaces = Mesh::neighborFaces(*HEV[i]);
+        
+        // Place to store planeErrorQuadrics
+        vector<Eigen::Matrix4f> planeErrorQuadrics;
+            
+        // Calculate the plane error quadric for each face
+        for(int j = 0; j<neighborFaces.size(); j++){
+            HEVertex firstVertex = *neighborFaces[j].edge->vert; // First point
+            HEVertex secondVertex = *neighborFaces[j].edge->next->vert; // Second point
+            HEVertex thirdVertex = *neighborFaces[j].edge->next->next->vert; // Third point
+                
+            Eigen::Vector3f v1(secondVertex.x - firstVertex.x, secondVertex.y - firstVertex.y, secondVertex.z - firstVertex.z);
+            Eigen::Vector3f v2(thirdVertex.x - firstVertex.x, thirdVertex.y - firstVertex.y, thirdVertex.z - firstVertex.z);
+                
+            Eigen::Vector3f faceNormal = v1.cross(v2);
+            float d = -(faceNormal[0] * HEV[i]->x + faceNormal[1] * HEV[i]->y + faceNormal[2] * HEV[i]->z);
+                
+            Eigen::Vector4f facePlaneEquation(faceNormal[0], faceNormal[1], faceNormal[2], d);
+            Eigen::Matrix4f Kp = facePlaneEquation*facePlaneEquation.transpose();
+            planeErrorQuadrics.push_back(Kp);
+        }
+        
+        // Sum the plane error quadric for each face
+        Eigen::Matrix4f Q = Eigen::MatrixXf::Zero(4, 4);
+        for(int j = 0; j < planeErrorQuadrics.size(); j++){
+            Q += planeErrorQuadrics[j];
+        }
+        // Add the total error quadric for the specific vertex id to the map
+        errorQuadricsMap[HEV[i]->id] = Q;
+    }
+    
+
+    
+    vector<EQTuple> QList;
+    for(int i = 0; i<HEE.size(); i++){
+        Eigen::Vector4f v(HEE[i]->twin->vert->x, HEE[i]->twin->vert->y, HEE[i]->twin->vert->z, 1);
+        v.transpose() * errorQuadricsMap[HEE[i]->vert->id] * v;
+//        cout << "Error for deletion: " << v.transpose() * errorQuadricsMap[HEE[i]->vert->id] * v << endl;
+
+        EQTuple e;
+        e.Q = v.transpose() * errorQuadricsMap[HEE[i]->vert->id] * v;
+        e.e = HEE[i];
+        QList.push_back(e);
+    }
+    
+    sort(QList.begin(), QList.end(), tupleSort);
+    
+    for(int i = 0; i<QList.size(); i++){
+        cout << "Edge " << QList[i].e->id << " has Q " <<  QList[i].Q << endl;
+    }
+    
+//    int nextDeletion;
+//    srand((int)time(0));
+    int toBeDeleted = 0;
     while(HEF.size() > faceCnt){
-        nextDeletion = rand() % HEE.size();
-//        cout << "Deleting edge " << nextDeletion << "...\n";
-        collapseEdge(*HEE[nextDeletion]);
+//        nextDeletion = rand() % HEE.size();
+        
+//        Eigen::Vector4f v(HEE[nextDeletion]->twin->vert->x, HEE[nextDeletion]->twin->vert->y, HEE[nextDeletion]->twin->vert->z, 1);
+//        v.transpose() * errorQuadricsMap[HEE[nextDeletion]->vert->id] * v;
+//        cout << "Error for deletion: " << v.transpose() * errorQuadricsMap[HEE[nextDeletion]->vert->id] * v << endl;
+//        float error = v.transpose() * errorQuadricsMap[HEE[nextDeletion]->vert->id] * v;
+//        QList[0].e;
+        cout << "Deleting edge " << QList[toBeDeleted].e->id << "...\n";
+        collapseEdge(*QList[toBeDeleted].e);
+        toBeDeleted ++;
     }
 
     
@@ -371,11 +448,13 @@ vector<HEFace> Mesh::neighborFaces(HEVertex v)
     vector<HEFace> adjacentFaces;
     
     HEEdge *firstEdge = v.edge;
-    HEEdge *nextEdge = v.edge->next;
-    adjacentFaces.push_back(*nextEdge->twin->face);
+    adjacentFaces.push_back(*firstEdge->face);
+    
+    HEEdge *nextEdge = firstEdge->twin->next;
     do{
-        adjacentFaces.push_back(*nextEdge->twin->face);
-        nextEdge = nextEdge->next;
+//        cout << "Pushing face " << nextEdge->face->id << endl;
+        adjacentFaces.push_back(*nextEdge->face);
+        nextEdge = nextEdge->twin->next;
     } while(nextEdge != firstEdge);
     
     return adjacentFaces;

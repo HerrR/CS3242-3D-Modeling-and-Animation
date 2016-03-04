@@ -75,6 +75,7 @@ public:
 	vector<HEVertex> neighborVertices(HEVertex v);
 	vector<HEFace> neighborFaces(HEVertex v);
 	vector<HEVertex> adjacentVertices(HEFace f);
+    
 	//return vertex count
 	int Vcnt();
 	//return face count

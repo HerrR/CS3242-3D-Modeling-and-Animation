@@ -28,6 +28,7 @@
 		183F953E1C64568100C3FCDE /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		183F95451C6456E700C3FCDE /* Mesh.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Mesh.cpp; sourceTree = "<group>"; };
 		183F95471C64571600C3FCDE /* Mesh.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Mesh.h; sourceTree = "<group>"; };
+		186976601C8963C900E478EB /* Eigen */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Eigen; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +63,7 @@
 			children = (
 				183F95471C64571600C3FCDE /* Mesh.h */,
 				183F95451C6456E700C3FCDE /* Mesh.cpp */,
+				186976601C8963C900E478EB /* Eigen */,
 				183F953E1C64568100C3FCDE /* main.cpp */,
 			);
 			path = "CS3242-Assignment01";
