@@ -135,18 +135,18 @@ Eigen::Matrix4f Mesh::getQ(HEVertex* v){
     for(int j = 0; j < planeErrorQuadrics.size(); j++){
         Q += planeErrorQuadrics[j];
     }
-
+    
     return Q;
 }
 
 void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
     
-	// you may assume inputs are always valid
+    // you may assume inputs are always valid
     cout << "Loading mesh... \n";
-	loadMF(input);
+    loadMF(input);
     
     cout << "\nConverting mesh... \n";
-	convertMesh();
+    convertMesh();
     
     cout << HEV.size() << " HE Vertices created" << endl;
     cout << HEF.size() << " HE Faces created " << endl;
@@ -166,7 +166,7 @@ void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
     
     // QList is a vector of tuples containing a reference to a half edge and an associated Q value which is the cost of deleting that edge
     vector<EQTuple*> QList;
-
+    
     // Get Q values for all the edges
     if(DEBUG) cout << "Getting Q values for all edges..." << endl;
     for(int i = 0; i<HEE.size(); i++){
@@ -177,7 +177,7 @@ void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
         };
         QList.push_back(e);
     }
-
+    
     cout << "Wanting to reduce faces from " << HEF.size() << " to " << faceCnt << endl;
     cout << "\nReducing mesh..." << endl;
     
@@ -219,14 +219,14 @@ void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
             }
             cout << endl;
         }
-
+        
         // Find the edges that are going to be updated (whose Q value will be affected by deletion
         vector<HEEdge*> edgesToBeUpdated;
-//        vector<HEEdge*> e1Edges = associatedEdges(QList[0]->e->vert);
-//        vector<HEEdge*> e2Edges = associatedEdges(QList[0]->e->twin->vert);
+        //        vector<HEEdge*> e1Edges = associatedEdges(QList[0]->e->vert);
+        //        vector<HEEdge*> e2Edges = associatedEdges(QList[0]->e->twin->vert);
         vector<HEEdge*> e1Edges = edgesPointingToSameVert(QList[0]->e);
         vector<HEEdge*> e2Edges = edgesPointingToSameVert(QList[0]->e->twin);
-
+        
         edgesToBeUpdated.insert(edgesToBeUpdated.end(), e1Edges.begin(), e1Edges.end());
         edgesToBeUpdated.insert(edgesToBeUpdated.end(), e2Edges.begin(), e2Edges.end());
         
@@ -275,20 +275,20 @@ void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
             }
             if(numUpdates == edgesToBeUpdated.size())break;
         }
-//        for(it=QList.begin(); it != QList.end();){
-//            if(find(edgesToBeUpdated.begin(), edgesToBeUpdated.end(), (*it)->e) != edgesToBeUpdated.end()){
-//                Eigen::Matrix4f Qmat = getQforEdge((*it)->e);
-//                Eigen::Vector4f v((*it)->e->twin->vert->x, (*it)->e->twin->vert->y, (*it)->e->twin->vert->z, 1);
-//                (*it)->Q = v.transpose()*Qmat*v;
-//            }
-//            ++it;
-//        }
+        //        for(it=QList.begin(); it != QList.end();){
+        //            if(find(edgesToBeUpdated.begin(), edgesToBeUpdated.end(), (*it)->e) != edgesToBeUpdated.end()){
+        //                Eigen::Matrix4f Qmat = getQforEdge((*it)->e);
+        //                Eigen::Vector4f v((*it)->e->twin->vert->x, (*it)->e->twin->vert->y, (*it)->e->twin->vert->z, 1);
+        //                (*it)->Q = v.transpose()*Qmat*v;
+        //            }
+        //            ++it;
+        //        }
     }
-
+    
     cout<< "\nOutput face count: " << HEF.size()<<endl;
     
     cout << "\nReverting mesh..." << endl;
-	revertMesh();
+    revertMesh();
     cout << "\nWriting output file..." << endl;
     writeMF(output);
 }
@@ -310,8 +310,8 @@ void Mesh::collapseEdge(HEEdge *e){
     vector<HEVertex*> neighborVerts2 = neighbourVertsFromEdge(e->twin);
     vertsToBeUpdated.insert(vertsToBeUpdated.end(), neighborVerts1.begin(), neighborVerts1.end());
     vertsToBeUpdated.insert(vertsToBeUpdated.end(), neighborVerts2.begin(), neighborVerts2.end());
-//    vector<HEVertex*> neighborVerts1 = neighborVertices(e->vert);
-//    vector<HEVertex*> neighborVerts2 = neighborVertices(e->twin->vert);
+    //    vector<HEVertex*> neighborVerts1 = neighborVertices(e->vert);
+    //    vector<HEVertex*> neighborVerts2 = neighborVertices(e->twin->vert);
     
     // Update twin pairs
     if(DEBUG) cout << "Twin of " << e->next->twin->id;
@@ -333,7 +333,7 @@ void Mesh::collapseEdge(HEEdge *e){
     if(DEBUG) cout << "Twin of " << e->twin->next->twin->id;
     e->twin->next->twin->twin = e->twin->next->next->twin;
     if(DEBUG) cout << " set to " << e->twin->next->twin->twin->id << " \n";
-
+    
     if(DEBUG) cout << "Twin of " << e->twin->next->next->twin->id;
     e->twin->next->next->twin->twin = e->twin->next->twin;
     if(DEBUG) cout << " set to " << e->twin->next->next->twin->twin->id << " \n";
@@ -364,7 +364,7 @@ void Mesh::collapseEdge(HEEdge *e){
             i --;
         }
     }
-
+    
     // Remove vertex
     for(int i = 0; i<HEV.size(); i++){
         if(HEV[i]->id == e->vert->id){
@@ -374,7 +374,7 @@ void Mesh::collapseEdge(HEEdge *e){
             break;
         }
     }
-
+    
     // Repoint all edges currently pointing at vertex to be deleted
     HEEdge* nextEdge = e->next->twin;
     do{
@@ -423,69 +423,69 @@ void Mesh::collapseEdge(HEEdge *e){
                 }
             }
         }
-//            if(vertsToBeUpdated[i] == e->vert){
-//                // Vertex will be deleted
-//                do{
-//                    vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->twin->next;
-//                } while(edgeDeletionMap[vertsToBeUpdated[i]->edge]);
-//                
-//            } else if (vertsToBeUpdated[i] == e->twin->vert){
-//                //
-//                for(int j = 0; j<HEE.size(); j++){
-//                    if(HEE[j]->vert == vertsToBeUpdated[i]){
-//                        if(!edgeDeletionMap[HEE[j]->twin]){
-//                            vertsToBeUpdated[i]->edge = HEE[j]->twin;
-//                            break;
-//                        }
-//                    }
-//                }
-//            } else {
-//
-//                do{
-//                    vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->next->next->twin;
-//
-//                } while(edgeDeletionMap[vertsToBeUpdated[i]->edge]);
-//            }
-//
-//        }
-//    
-//
-////            do{
-////                vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->next->next->twin;
-////            }while(edgeDeletionMap[vertsToBeUpdated[i]->edge]);
-//            
-//        }
-//
-//        if(find(HEE.begin(), HEE.end(), vertsToBeUpdated[i]->edge) != HEE.end()){
-//        
-//            // Vertex is not the one which is going to be deleted
-//            if(!(vertsToBeUpdated[i]->id == e->vert->id)){
-//                // Repoint the edge to a valid edge
-//                do{
-//                    vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->next->next->twin;
-//                }while(edgeDeletionMap[vertsToBeUpdated[i]->edge]);
-////                } while(!(find(HEE.begin(), HEE.end(), vertsToBeUpdated[i]->edge) != HEE.end()));
-//                // Vertex to be updated is the same vertex that is going to be removed.
-//            } else {
-//                
-//                // This vertex is going to be deleted, but for safety-reasons we repoint the edge anyway
-//                for(int j = 0; j<HEE.size(); j++){
-//                    if(HEE[j]->vert == vertsToBeUpdated[i]){
-//                        vertsToBeUpdated[i]->edge = HEE[j]->twin;
-//                        break;
-//                    }
-//                }
-//            }
-//        } else {
-//            for(int j = 0; j<HEE.size(); j++){
-//                if(HEE[j]->vert == vertsToBeUpdated[i]){
-//                    if(find(HEE.begin(), HEE.end(), HEE[j]->twin) != HEE.end()){
-//                        vertsToBeUpdated[i]->edge = HEE[j]->twin;
-//                        break;
-//                    }
-//                }
-//            }
-//        }
+        //            if(vertsToBeUpdated[i] == e->vert){
+        //                // Vertex will be deleted
+        //                do{
+        //                    vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->twin->next;
+        //                } while(edgeDeletionMap[vertsToBeUpdated[i]->edge]);
+        //
+        //            } else if (vertsToBeUpdated[i] == e->twin->vert){
+        //                //
+        //                for(int j = 0; j<HEE.size(); j++){
+        //                    if(HEE[j]->vert == vertsToBeUpdated[i]){
+        //                        if(!edgeDeletionMap[HEE[j]->twin]){
+        //                            vertsToBeUpdated[i]->edge = HEE[j]->twin;
+        //                            break;
+        //                        }
+        //                    }
+        //                }
+        //            } else {
+        //
+        //                do{
+        //                    vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->next->next->twin;
+        //
+        //                } while(edgeDeletionMap[vertsToBeUpdated[i]->edge]);
+        //            }
+        //
+        //        }
+        //
+        //
+        ////            do{
+        ////                vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->next->next->twin;
+        ////            }while(edgeDeletionMap[vertsToBeUpdated[i]->edge]);
+        //
+        //        }
+        //
+        //        if(find(HEE.begin(), HEE.end(), vertsToBeUpdated[i]->edge) != HEE.end()){
+        //
+        //            // Vertex is not the one which is going to be deleted
+        //            if(!(vertsToBeUpdated[i]->id == e->vert->id)){
+        //                // Repoint the edge to a valid edge
+        //                do{
+        //                    vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->next->next->twin;
+        //                }while(edgeDeletionMap[vertsToBeUpdated[i]->edge]);
+        ////                } while(!(find(HEE.begin(), HEE.end(), vertsToBeUpdated[i]->edge) != HEE.end()));
+        //                // Vertex to be updated is the same vertex that is going to be removed.
+        //            } else {
+        //
+        //                // This vertex is going to be deleted, but for safety-reasons we repoint the edge anyway
+        //                for(int j = 0; j<HEE.size(); j++){
+        //                    if(HEE[j]->vert == vertsToBeUpdated[i]){
+        //                        vertsToBeUpdated[i]->edge = HEE[j]->twin;
+        //                        break;
+        //                    }
+        //                }
+        //            }
+        //        } else {
+        //            for(int j = 0; j<HEE.size(); j++){
+        //                if(HEE[j]->vert == vertsToBeUpdated[i]){
+        //                    if(find(HEE.begin(), HEE.end(), HEE[j]->twin) != HEE.end()){
+        //                        vertsToBeUpdated[i]->edge = HEE[j]->twin;
+        //                        break;
+        //                    }
+        //                }
+        //            }
+        //        }
         if(DEBUG) {
             if(edgeDeletionMap[vertsToBeUpdated[i]->edge]){
                 cout << "--- Reassigned edge not in HEE vector, id "<< vertsToBeUpdated[i]->edge->id << " for vertex "<< vertsToBeUpdated[i]->id <<" \n";
@@ -510,7 +510,7 @@ void Mesh::collapseEdge(HEEdge *e){
             }
         }
     }
-
+    
     if(DEBUG){
         // Check for illegal twins
         // An illegal twin is an edge who has a twin not present in the HEE vector.
@@ -560,7 +560,7 @@ void Mesh::convertMesh()
         HEEdge *e1 = new HEEdge();
         HEEdge *e2 = new HEEdge();
         HEEdge *e3 = new HEEdge();
-
+        
         // Push edges to HEE Vector and face to HEF vector.
         HEF.push_back(f);
         HEE.push_back(e1);
@@ -590,7 +590,7 @@ void Mesh::convertMesh()
         HEV[vIndex1]->edge = HEE[eIndex1];
         HEV[vIndex2]->edge = HEE[eIndex2];
         HEV[vIndex3]->edge = HEE[eIndex3];
-
+        
         // Assign vertex that each edge is pointing to
         HEE[eIndex1]->vert = HEV[vIndex2];
         HEE[eIndex2]->vert = HEV[vIndex3];
@@ -600,7 +600,7 @@ void Mesh::convertMesh()
         HEE[eIndex1]->face = HEF[i];
         HEE[eIndex2]->face = HEF[i];
         HEE[eIndex3]->face = HEF[i];
-
+        
         // Assign next for each HE
         HEE[eIndex1]->next = HEE[eIndex2];
         HEE[eIndex2]->next = HEE[eIndex3];
@@ -610,19 +610,19 @@ void Mesh::convertMesh()
         HasOriginAt[eIndex1] = vIndex1;
         HasOriginAt[eIndex2] = vIndex2;
         HasOriginAt[eIndex3] = vIndex3;
-
+        
         // Update which index the edges are pointing to
         IsPointingTo[eIndex1] = vIndex2;
         IsPointingTo[eIndex2] = vIndex3;
         IsPointingTo[eIndex3] = vIndex1;
-
+        
         // Update PointedAtBy map.
         PointedAtBy[vIndex2].push_back(eIndex1);
         PointedAtBy[vIndex3].push_back(eIndex2);
         PointedAtBy[vIndex1].push_back(eIndex3);
     }
     
-//     Loop through the half edge list, given a half edge, find its origin using the map
+    //     Loop through the half edge list, given a half edge, find its origin using the map
     for (int i = 0; i < HEE.size(); i++) {
         for(int j = 0; j < PointedAtBy[HasOriginAt[i]].size(); j++){
             if(HasOriginAt[PointedAtBy[HasOriginAt[i]][j]] == IsPointingTo[i]){
@@ -640,13 +640,13 @@ void Mesh::revertMesh()
     F.clear();
     map<int, int> locatedAt;
     
-//    if(DEBUG){
-        for(int i = 0; i<HEE.size(); i++){
-            if(!(find(HEV.begin(), HEV.end(), HEE[i]->vert) != HEV.end())){
-                cout << "Can't find vert of edge " << HEE[i]->id << " which is " << HEE[i]->vert->id << " \n";
-            }
+    //    if(DEBUG){
+    for(int i = 0; i<HEE.size(); i++){
+        if(!(find(HEV.begin(), HEV.end(), HEE[i]->vert) != HEV.end())){
+            cout << "Can't find vert of edge " << HEE[i]->id << " which is " << HEE[i]->vert->id << " \n";
         }
-//    }
+    }
+    //    }
     
     for (int i = 0; i<HEV.size(); i++) {
         Vertex v;
@@ -660,7 +660,7 @@ void Mesh::revertMesh()
     for(int i = 0; i<HEF.size(); i++){
         Face f;
         vector<HEVertex*> adjacentVerts = adjacentVertices(HEF[i]);
-
+        
         f.a = locatedAt[adjacentVerts[0]->id];
         f.b = locatedAt[adjacentVerts[1]->id];
         f.c = locatedAt[adjacentVerts[2]->id];
@@ -690,11 +690,11 @@ vector<HEEdge*> Mesh::neighborEdges(HEFace *f){
             cout << "------- Edge not present in HEE "<< f->edge->id << " \n";
         }
     }
-
+    
     HEEdge *firstEdge = f->edge;
     HEEdge *nextEdge = firstEdge->next;
     neighborEdges.push_back(nextEdge);
-
+    
     do{
         nextEdge = nextEdge->next;
         neighborEdges.push_back(nextEdge);
@@ -773,7 +773,7 @@ vector<HEVertex*> Mesh::adjacentVertices(HEFace *f)
     HEEdge *nextEdge = f->edge->next;
     
     adjacentVerts.push_back(firstEdge->vert);
-
+    
     do{
         adjacentVerts.push_back(nextEdge->vert);
         nextEdge = nextEdge->next;
@@ -796,10 +796,10 @@ vector<HEVertex*> Mesh::neighbourVertsFromEdge(HEEdge* e){
 
 int Mesh::Vcnt(){
     /* Half Edge Vertex */
-	return (int)HEV.size();
+    return (int)HEV.size();
 }
 
 int Mesh::Fcnt(){
     /* Half Edge Face */
-	return (int)HEF.size();
+    return (int)HEF.size();
 }
