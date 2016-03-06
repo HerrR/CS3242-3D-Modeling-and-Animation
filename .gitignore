@@ -1,0 +1,10 @@
+*.xcodeproj
+*.xcodeproj/*
+
+.DS_Store
+
+data/*
+
+
+CS3242-Assignment01/*
+*.xcuserstate
