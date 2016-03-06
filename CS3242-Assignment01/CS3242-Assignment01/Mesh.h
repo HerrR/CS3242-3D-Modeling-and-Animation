@@ -7,6 +7,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <map>
 
 using namespace std;
 
@@ -56,6 +57,10 @@ private:
 	vector<HEVertex*> HEV;
 	vector<HEEdge*> HEE;
 	vector<HEFace*> HEF;
+    
+    map<HEEdge*, bool> edgeDeletionMap;
+    map<HEFace*, bool> faceDeletionMap;
+    map<HEVertex*, bool> vertexDeletionMap;
 public:
 	Mesh() {};
 	Mesh(const char*);
@@ -73,12 +78,14 @@ public:
 	void revertMesh();
 	//helper methods
     Eigen::Matrix4f getQ(HEVertex* v);
+    Eigen::Matrix4f getQforEdge(HEEdge* e);
     vector<HEEdge*> neighborEdges(HEFace* f);
 	vector<HEVertex*> neighborVertices(HEVertex* v);
 	vector<HEFace*> neighborFaces(HEVertex* v);
 	vector<HEVertex*> adjacentVertices(HEFace* f);
     vector<HEEdge*> associatedEdges(HEVertex* v);
     vector<HEVertex*> neighbourVertsFromEdge(HEEdge* e);
+    vector<HEEdge*> edgesPointingToSameVert(HEEdge *e);
     
 	//return vertex count
 	int Vcnt();

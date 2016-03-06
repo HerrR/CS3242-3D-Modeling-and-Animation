@@ -63,19 +63,24 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "/Users/rickardbergeling/GitHub/CS3242-3D-Modeling-and-Animation/CS3242-Assignment01/CS3242-Assignment01/data/cow580.mesh"
+            argument = "/Users/rickardbergeling/GitHub/CS3242-3D-Modeling-and-Animation/CS3242-Assignment01/CS3242-Assignment01/data/horse1000.mesh"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Users/rickardbergeling/GitHub/CS3242-3D-Modeling-and-Animation/CS3242-Assignment01/CS3242-Assignment01/data/output.mesh"
+            argument = "/Users/rickardbergeling/GitHub/CS3242-3D-Modeling-and-Animation/CS3242-Assignment01/CS3242-Assignment01/data/outputHorse.obj"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "400"
+            argument = "800"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
       <AdditionalOptions>
+         <AdditionalOption
+            key = "NSZombieEnabled"
+            value = "YES"
+            isEnabled = "YES">
+         </AdditionalOption>
       </AdditionalOptions>
    </LaunchAction>
    <ProfileAction
