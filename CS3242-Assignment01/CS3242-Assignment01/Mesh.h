@@ -1,6 +1,7 @@
 #ifndef _MESH_H_
 #define _MESH_H_
 
+#include "Eigen/Dense"
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -31,7 +32,7 @@ typedef struct HEVertex{
     float y;
     float z;
     int id;
-    HEEdge* edge;  // Outgoing halfedge
+    HEEdge* edge; // Outgoing halfedge
 } HEVertex;
 
 typedef struct HEEdge {
@@ -67,14 +68,16 @@ public:
 	//turn indexed face set to halfedge
 	void convertMesh();
     // Collapse edge
-    void collapseEdge(HEEdge e);
+    void collapseEdge(HEEdge *e);
 	//turn halfedge to indexed face set
 	void revertMesh();
 	//helper methods
-    vector<HEEdge> neighborEdges(HEFace *f);
-	vector<HEVertex> neighborVertices(HEVertex v);
-	vector<HEFace> neighborFaces(HEVertex v);
-	vector<HEVertex> adjacentVertices(HEFace f);
+    Eigen::Matrix4f getQ(HEVertex* v);
+    vector<HEEdge*> neighborEdges(HEFace* f);
+	vector<HEVertex*> neighborVertices(HEVertex* v);
+	vector<HEFace*> neighborFaces(HEVertex* v);
+	vector<HEVertex*> adjacentVertices(HEFace* f);
+    vector<HEEdge*> associatedEdges(HEVertex* v);
     
 	//return vertex count
 	int Vcnt();

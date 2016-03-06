@@ -12,58 +12,66 @@ using namespace std;
 
 typedef struct {
     float Q;
-    HEEdge* e;
+    HEEdge *e;
 } EQTuple;
 
+//typedef struct {
+//    HEVertex *e;
+//    int numAppearance;
+//} edgeNeighborsTuple;
 
+//typedef struct {
+//    HEFace *f;
+//    float avgDistance;
+//} avgDistanceTuple;
 
+//static bool operator==(EQTuple& tuple, HEEdge* edge) {
+//    return tuple.e->id == edge->id;
+//}
 
-bool tupleSort(EQTuple i, EQTuple j) { return (i.Q<j.Q); }
+//static bool operator==(HEEdge* outgoingEdge , const HEVertex& originVertex){
+//    return originVertex.edge->id == outgoingEdge->id;
+//}
 
-Mesh::Mesh(const char* filename){
-    loadMF(filename);
-}
+bool tupleSort(EQTuple* i, EQTuple* j) { return (i->Q<j->Q); }
+bool edgeSort(HEEdge* i, HEEdge* j) { return (i->id < j->id); }
+//bool tupleSortCount(edgeNeighborsTuple i, edgeNeighborsTuple j) { return (i.numAppearance > j.numAppearance); }
+//bool avgDistanceTupleSort(avgDistanceTuple i, avgDistanceTuple j){ return (i.avgDistance > j.avgDistance); }
 
-void Mesh::loadMF(const char* filename){
-	if(V.size()>0) V.clear();
-	if(F.size()>0) F.clear();
+Eigen::Matrix4f Mesh::getQ(HEVertex* v){
     
-	ifstream infile;
-	infile.open(filename, ios::in);
+    // Get the neighbouring faces of a vertex v
+    vector<HEFace*> neighborFaces = Mesh::neighborFaces(v);
     
-	string strbuff;
-	while(getline(infile,strbuff)){
-		stringstream ss;
-		ss<<strbuff;
-		char type;
-		ss>>type;
-		if(type=='v'){
-			Vertex v;
-			ss>>v.x>>v.y>>v.z;
-			V.push_back(v);
-		}
-		else if(type=='f'){
-			Face f;
-			ss>>f.a>>f.b>>f.c;
-			F.push_back(f);
-		}
-	}
-    cout << "V size: " << V.size() << endl;
-    cout << "F size: " << F.size() << endl;
-	infile.close();
-}
-
-void Mesh::writeMF(const char* filename){
-	ofstream outfile;
-	outfile.open(filename, ios::out);
-	string strbuff;
-	for(uint i=0;i<V.size();i++){
-		outfile<<"v "<<V[i].x<<" "<<V[i].y<<" "<<V[i].z<<endl;
-	}
-	for(uint i=0;i<F.size();i++){
-		outfile<<"f "<<F[i].a<<" "<<F[i].b<<" "<<F[i].c<<endl;
-	}
-	outfile.close();
+    // Place to store planeErrorQuadrics
+    vector<Eigen::Matrix4f> planeErrorQuadrics;
+    
+    // Calculate the plane error quadric for each face
+    for(int j = 0; j<neighborFaces.size(); j++){
+        HEVertex firstVertex = *neighborFaces[j]->edge->vert; // First point
+        HEVertex secondVertex = *neighborFaces[j]->edge->next->vert; // Second point
+        HEVertex thirdVertex = *neighborFaces[j]->edge->next->next->vert; // Third point
+        
+        Eigen::Vector3f v1(secondVertex.x - firstVertex.x, secondVertex.y - firstVertex.y, secondVertex.z - firstVertex.z);
+        Eigen::Vector3f v2(thirdVertex.x - firstVertex.x, thirdVertex.y - firstVertex.y, thirdVertex.z - firstVertex.z);
+        
+        Eigen::Vector3f faceNormal = v1.cross(v2);
+        float d = -(faceNormal[0] * v->x + faceNormal[1] * v->y + faceNormal[2] * v->z);
+        
+        Eigen::Vector4f facePlaneEquation(faceNormal[0], faceNormal[1], faceNormal[2], d);
+        Eigen::Matrix4f Kp = facePlaneEquation*facePlaneEquation.transpose();
+        planeErrorQuadrics.push_back(Kp);
+    }
+    
+    // Sum the plane error quadric for each face
+    Eigen::Matrix4f Q = Eigen::MatrixXf::Zero(4, 4);
+    for(int j = 0; j < planeErrorQuadrics.size(); j++){
+        Q += planeErrorQuadrics[j];
+    }
+    
+    // Add the total error quadric for the specific vertex id to the map
+    // errorQuadricsMap[v->id] = Q;
+    return Q;
 }
 
 void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
@@ -80,84 +88,104 @@ void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
     cout << HEE.size() << " HE Edges created \n" << endl;
     
     cout << "Original face count: " << HEF.size() << endl;
-	// do mesh simplification here
     
     // Map with all the vertex IDs and their error quadric
     map<int, Eigen::Matrix4f> errorQuadricsMap;
     
-    // For each vertex in the mesh
+    // Get the Q matrices for each vertex
+    cout << "Getting Q matrixes for all vertexes... " << endl;
     for(int i = 0; i < HEV.size() ; i++){
-        // Get the neighbouring faces
-        vector<HEFace> neighborFaces = Mesh::neighborFaces(*HEV[i]);
-        
-        // Place to store planeErrorQuadrics
-        vector<Eigen::Matrix4f> planeErrorQuadrics;
-            
-        // Calculate the plane error quadric for each face
-        for(int j = 0; j<neighborFaces.size(); j++){
-            HEVertex firstVertex = *neighborFaces[j].edge->vert; // First point
-            HEVertex secondVertex = *neighborFaces[j].edge->next->vert; // Second point
-            HEVertex thirdVertex = *neighborFaces[j].edge->next->next->vert; // Third point
-                
-            Eigen::Vector3f v1(secondVertex.x - firstVertex.x, secondVertex.y - firstVertex.y, secondVertex.z - firstVertex.z);
-            Eigen::Vector3f v2(thirdVertex.x - firstVertex.x, thirdVertex.y - firstVertex.y, thirdVertex.z - firstVertex.z);
-                
-            Eigen::Vector3f faceNormal = v1.cross(v2);
-            float d = -(faceNormal[0] * HEV[i]->x + faceNormal[1] * HEV[i]->y + faceNormal[2] * HEV[i]->z);
-                
-            Eigen::Vector4f facePlaneEquation(faceNormal[0], faceNormal[1], faceNormal[2], d);
-            Eigen::Matrix4f Kp = facePlaneEquation*facePlaneEquation.transpose();
-            planeErrorQuadrics.push_back(Kp);
-        }
-        
-        // Sum the plane error quadric for each face
-        Eigen::Matrix4f Q = Eigen::MatrixXf::Zero(4, 4);
-        for(int j = 0; j < planeErrorQuadrics.size(); j++){
-            Q += planeErrorQuadrics[j];
-        }
-        // Add the total error quadric for the specific vertex id to the map
+        Eigen::Matrix4f Q = getQ(HEV[i]);
         errorQuadricsMap[HEV[i]->id] = Q;
     }
     
+    // QList is a vector of tuples containing a reference to a half edge and an associated Q value which is the cost of deleting that edge
+    vector<EQTuple*> QList;
 
-    
-    vector<EQTuple> QList;
+    // Get Q values for all the edges
+    cout << "Getting Q values for all edges..." << endl;
     for(int i = 0; i<HEE.size(); i++){
         Eigen::Vector4f v(HEE[i]->twin->vert->x, HEE[i]->twin->vert->y, HEE[i]->twin->vert->z, 1);
         v.transpose() * errorQuadricsMap[HEE[i]->vert->id] * v;
-//        cout << "Error for deletion: " << v.transpose() * errorQuadricsMap[HEE[i]->vert->id] * v << endl;
-
-        EQTuple e;
-        e.Q = v.transpose() * errorQuadricsMap[HEE[i]->vert->id] * v;
-        e.e = HEE[i];
+        EQTuple *e = new EQTuple{
+            v.transpose() * errorQuadricsMap[HEE[i]->vert->id] * v, // Q
+            HEE[i] // e
+        };
         QList.push_back(e);
     }
     
     sort(QList.begin(), QList.end(), tupleSort);
+
+    cout << "Wanting to reduce faces from " << HEF.size() << " to " << faceCnt << endl;
+    cout << "\nReducing mesh..." << endl;
     
-    for(int i = 0; i<QList.size(); i++){
-        cout << "Edge " << QList[i].e->id << " has Q " <<  QList[i].Q << endl;
-    }
-    
-//    int nextDeletion;
-//    srand((int)time(0));
-    int toBeDeleted = 0;
     while(HEF.size() > faceCnt){
-//        nextDeletion = rand() % HEE.size();
+        cout << "\nFirst in QList: edge " << QList[0]->e->id << " with twin " << QList[0]->e->twin->id << endl;
+//        for(int i = 0 ; i<HEE.size(); i++){
+//            if(HEE[i]->next->next->next != HEE[i]){
+//                cout << "------ Broken loop!";
+//            }
+//        }
         
-//        Eigen::Vector4f v(HEE[nextDeletion]->twin->vert->x, HEE[nextDeletion]->twin->vert->y, HEE[nextDeletion]->twin->vert->z, 1);
-//        v.transpose() * errorQuadricsMap[HEE[nextDeletion]->vert->id] * v;
-//        cout << "Error for deletion: " << v.transpose() * errorQuadricsMap[HEE[nextDeletion]->vert->id] * v << endl;
-//        float error = v.transpose() * errorQuadricsMap[HEE[nextDeletion]->vert->id] * v;
-//        QList[0].e;
-        cout << "Deleting edge " << QList[toBeDeleted].e->id << "...\n";
-        collapseEdge(*QList[toBeDeleted].e);
-        toBeDeleted ++;
+        // Find the edges that are going to be deleted (those within the adjacent faces of e and e->twin
+        vector<HEEdge*> f1Edges = neighborEdges(QList[0]->e->face);
+        vector<HEEdge*> f2Edges = neighborEdges(QList[0]->e->twin->face);
+        vector<HEEdge*> edgesToBeDeleted;
+        
+        edgesToBeDeleted.insert(edgesToBeDeleted.end(), f1Edges.begin(), f1Edges.end());
+        edgesToBeDeleted.insert(edgesToBeDeleted.end(), f2Edges.begin(), f2Edges.end());
+        
+        cout << "Edges to be deleted:" << endl;
+        for(int i = 0; i < edgesToBeDeleted.size(); i++){
+            cout << edgesToBeDeleted[i]->id << endl;
+        }
+        
+        // Find the edges that are going to be updated (whose Q value will be affected by deletion
+        vector<HEEdge*> e1Edges = associatedEdges(QList[0]->e->vert);
+        vector<HEEdge*> e2Edges = associatedEdges(QList[0]->e->twin->vert);
+        vector<HEEdge*> edgesToBeUpdated;
+        
+        edgesToBeUpdated.insert(edgesToBeUpdated.end(), e1Edges.begin(), e1Edges.end());
+        edgesToBeUpdated.insert(edgesToBeUpdated.end(), e2Edges.begin(), e2Edges.end());
+        
+        // Don't need to update the edges that are going to be deleted
+        for(int i = 0; i<edgesToBeUpdated.size(); i++){
+            for(int j = 0; j < edgesToBeDeleted.size(); j++){
+                if(edgesToBeUpdated[i] == edgesToBeDeleted[j]){
+                    edgesToBeUpdated.erase(edgesToBeUpdated.begin()+i);
+                    i--;
+                }
+            }
+        }
+        
+        cout << "\nCollapsing edge " << QList[0]->e->id << " with twin " << QList[0]->e->twin->id << endl;
+        collapseEdge(QList[0]->e);
+        
+        // Delete EQ Tuples for edges that have been deleted from the mesh
+        vector<EQTuple*>::iterator it;
+        for(it=QList.begin(); it != QList.end();){
+            if(find(edgesToBeDeleted.begin(), edgesToBeDeleted.end(), (*it)->e) != edgesToBeDeleted.end()){
+                cout << "Deleting EQ tuple with ref to edge " << (*it)->e->id << endl;
+                QList.erase(it);
+                --it;
+            }
+            ++it;
+        }
+        
+        // Update Q value for edges affected by the change
+        for(it=QList.begin(); it != QList.end();){
+            if(find(edgesToBeUpdated.begin(), edgesToBeUpdated.end(), (*it)->e) != edgesToBeUpdated.end()){
+                Eigen::Matrix4f Qmat = getQ((*it)->e->vert);
+                Eigen::Vector4f v((*it)->e->twin->vert->x, (*it)->e->twin->vert->y, (*it)->e->twin->vert->z, 1);
+                (*it)->Q = v.transpose()*Qmat*v;
+            }
+            ++it;
+        }
+
+        // Resort tuple list
+        sort(QList.begin(), QList.end(), tupleSort);
     }
 
-    
-//    cout << endl << "Simplification goes here..."<< endl << endl;
-    
     cout<< "\nOutput face count: " << HEF.size()<<endl;
     
     cout << "\nReverting mesh..." << endl;
@@ -166,108 +194,131 @@ void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
     writeMF(output);
 }
 
-void Mesh::collapseEdge(HEEdge e){
-    // TODO
-    // 4 Half Edges will be linked through 2 new twin connections CHECK
-    // Update vertex pointers for all HEs pointing at vertex to be deleted CHECK
+void Mesh::collapseEdge(HEEdge *e){
+    // Find which edges are going to get deleted
+    vector<HEEdge*> edgesToBeDeleted = Mesh::neighborEdges(e->face);
+    vector<HEEdge*> deleteTheseToo = Mesh::neighborEdges(e->twin->face);
+    edgesToBeDeleted.insert(edgesToBeDeleted.end(), deleteTheseToo.begin(), deleteTheseToo.end());
     
-    // Delete adjacent faces CHECK
-    // Delete one of the vertices (the one being pointed to by HE selected)
-    // Delete all HE's in face being deleted
+    // Find which vertexes might have an outgoing edge which will be deleted
+//    vector<HEVertex*> vertsToBeUpdated = adjacentVertices(e->face);
+//    vector<HEVertex*> andThese = adjacentVertices(e->twin->face);
+//    vertsToBeUpdated.insert(vertsToBeUpdated.end(), andThese.begin(), andThese.end());
     
-    vector<HEEdge> deleteThese = Mesh::neighborEdges(e.face);
-    vector<HEEdge> deleteTheseToo = Mesh::neighborEdges(e.twin->face);
-    deleteThese.insert(deleteThese.end(), deleteTheseToo.begin(), deleteTheseToo.end());
+    vector<HEVertex*> vertsToBeUpdated = neighborVertices(e->vert);
+    vector<HEVertex*> vertsToBeUpdated2 = neighborVertices(e->twin->vert);
+    vertsToBeUpdated.insert(vertsToBeUpdated.end(), vertsToBeUpdated2.begin(), vertsToBeUpdated2.end());
+    
+
+    for(int i = 0; i<HEE.size(); i++){
+        if(HEE[i]->twin->twin->id != HEE[i]->id){
+            cout << "--- Broken twin pair between " << HEE[i]->id << " pointing at "<< HEE[i]->vert->id << " and " << HEE[i]->twin->id<< " pointing at "<< HEE[i]->twin->vert->id << endl;
+        }
+    }
     
     // Update twin pairs
-//    cout << "Setting twin of " <<
-//        e.next->twin->id << " pointing at " <<
-//        e.next->twin->vert->id << " to " <<
-//        e.next->next->twin->id << " pointing at " <<
-//        e.next->next->twin->vert->id << endl;
-    e.next->twin->twin = e.next->next->twin;
+    cout << "Twin of " << e->next->twin->id;
+    e->next->twin->twin = e->next->next->twin;
+    cout << " set to " << e->next->twin->twin->id << endl;
     
-//    cout << "Setting twin of " <<
-//        e.next->next->twin->id << " pointing at "<<
-//        e.next->next->twin->vert->id << " to " <<
-//        e.next->twin->id << " pointing at " <<
-//        e.next->twin->vert->id << endl;
-    e.next->next->twin->twin = e.next->twin;
+    cout << "Twin of " << e->next->next->twin->id;
+    e->next->next->twin->twin = e->next->twin;
+    cout << " set to " << e->next->next->twin->twin->id << endl;
     
-//    cout << "Setting twin of " << e.twin->next->twin->twin->id << " to " <<  e.twin->next->next->twin->id << endl;
-//    cout << "Setting twin of " <<
-//    e.twin->next->twin->id << " pointing at "<<
-//    e.twin->next->twin->vert->id << " to " <<
-//    e.twin->next->next->twin->id << " pointing at " <<
-//    e.twin->next->next->twin->vert->id << endl;
-    e.twin->next->twin->twin = e.twin->next->next->twin;
-    
-//    cout << "Setting twin of " <<
-//    e.twin->next->next->twin->id << " pointing at "<<
-//    e.twin->next->next->twin->vert->id << " to " <<
-//    e.twin->next->twin->id << " pointing at " <<
-//    e.twin->next->twin->vert->id << endl;
-//    cout << "Setting twin of " << e.twin->next->next->twin->twin->id << " to " <<  e.twin->next->twin->id << endl << endl;
-    e.twin->next->next->twin->twin = e.twin->next->twin;
-    
-//    cout << "\nNew vertex to be pointed to " << e.twin->vert->id << endl;
-//    cout << "Vertex to be deleted: " << e.vert->id << endl;
-    
-    HEEdge* nextEdge = e.next->twin;
-    do{
-//        cout << "Repointing edge "<< nextEdge->id <<" currently pointing at " << nextEdge->vert->id << " to " << e.twin->vert->id << endl;
-        nextEdge->vert = e.twin->vert;
-        nextEdge = nextEdge->next->twin;
-    } while(nextEdge->vert->id != e.twin->vert->id);
-    
-//    cout << endl;
+    cout << "Twin of " << e->twin->next->twin->id;
+    e->twin->next->twin->twin = e->twin->next->next->twin;
+    cout << " set to " << e->twin->next->twin->twin->id << endl;
 
+    cout << "Twin of " << e->twin->next->next->twin->id;
+    e->twin->next->next->twin->twin = e->twin->next->twin;
+    cout << " set to " << e->twin->next->next->twin->twin->id << endl;
+    
+    // Delete Half Edges within the faces
+    vector<HEEdge*>::iterator HEEdgeIterator;
+    
+    for(HEEdgeIterator=HEE.begin(); HEEdgeIterator != HEE.end();){
+        for(int i = 0; i<edgesToBeDeleted.size(); i++){
+            if(find(edgesToBeDeleted.begin(), edgesToBeDeleted.end(), (*HEEdgeIterator)) != edgesToBeDeleted.end()){
+                cout << "Deleting edge " << (*HEEdgeIterator)->id << endl;
+                HEE.erase(HEEdgeIterator);
+                --HEEdgeIterator;
+            }
+        }
+        ++HEEdgeIterator;
+    }
+    
+    // Delete faces
+    int deletedFaces = 0;
+    for (int i = 0; i<HEF.size(); i++) {
+        if( (HEF[i]->id == e->face->id) || (HEF[i]->id == e->twin->face->id) ){
+            HEF.erase(HEF.begin()+i);
+            cout << "Deleting face " << HEF[i]->id << endl;
+            deletedFaces ++;
+            if(deletedFaces == 2){break;}
+            i --;
+        }
+    }
+
+    // Remove vertex
     for(int i = 0; i<HEV.size(); i++){
-        if(HEV[i]->id == e.vert->id){
-//            cout << "Deleting vertex with id " << HEV[i]->id << endl;
+        if(HEV[i]->id == e->vert->id){
+            cout << "Deleting vertex " << HEV[i]->id << endl;
             HEV.erase(HEV.begin()+i);
             break;
         }
     }
 
-//    cout << "Faces to be deleted: " << e.face->id << " and " << e.twin->face->id << endl;
-    int deletedFaces = 0;
-    for (int i = 0; i<HEF.size(); i++) {
-        if( (HEF[i]->id == e.face->id) || (HEF[i]->id == e.twin->face->id) ){
-//            cout << "Deleting face with id " << HEF[i]->id << endl;
-            HEF.erase(HEF.begin()+i);
-            deletedFaces ++;
-            if(deletedFaces == 2){
-                break;
+    // Repoint all edges currently pointing at vertex to be deleted
+    HEEdge* nextEdge = e->next->twin;
+    do{
+        nextEdge->twin->vert->edge = nextEdge;
+        nextEdge->vert = e->twin->vert;
+        nextEdge = nextEdge->next->twin;
+    } while(nextEdge->vert->id != e->twin->vert->id);
+    
+    
+    for( int i = 0; i < vertsToBeUpdated.size(); i++ ){
+        // Outgoing edge of vertex is going to be deleted
+        if(find(HEE.begin(), HEE.end(), vertsToBeUpdated[i]->edge) != HEE.end()){
+            
+            // Vertex is not the one which is going to be deleted
+            if(!(vertsToBeUpdated[i]->id == e->vert->id)){
+                
+                // Peka om den jäveln
+                do{
+                    vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->next->next->twin;
+                } while(!(find(HEE.begin(), HEE.end(), vertsToBeUpdated[i]->edge) != HEE.end()));
+                
+                
+                if(!(find(HEE.begin(), HEE.end(), vertsToBeUpdated[i]->edge) != HEE.end())){
+                    cout << "--- Reassigned edge not in HEE vector, id "<< vertsToBeUpdated[i]->edge->id << endl;
+                }
+                // Vertex to be updated is the same vertex that is going to be removed.
             }
-            i --;
+        } else {
+            for(int j = 0; j<HEE.size(); j++){
+                if(HEE[j]->vert == vertsToBeUpdated[i]){
+                    vertsToBeUpdated[i]->edge = HEE[j]->next;
+                    break;
+                }
+            }
+            cout << "Does this ever occur?" << endl;
+        }
+    }
+    
+    // Check if any of the valid edges are pointing to a deleted edge
+    for(int i = 0; i<HEV.size(); i++){
+        if(!(find(HEE.begin(), HEE.end(), HEV[i]->edge) != HEE.end())){
+            cout << "--- Outgoing edge of " << HEV[i]->id << " pointing at deleted edge " << HEV[i]->edge->id << endl;
         }
     }
 
-    int deletedEdges = 0;
-    bool stepBack = false;
+    // Check for illegal twins
+    // An illegal twin is an edge who has a twin not present in the HEE vector.
     for(int i = 0; i<HEE.size(); i++){
-        if(stepBack){
-            i--;
-            stepBack = false;
-        }
-
-        for (int j = 0; j < deleteThese.size(); j++) {
-            if(HEE[i]->id == deleteThese[j].id){
-//                cout << "Deleting edge  " << HEE[i]->id << endl;
-                HEE.erase(HEE.begin()+i);
-                deleteThese.erase(deleteThese.begin()+j);
-                
-                if(deletedEdges == deleteThese.size()){
-                    break;
-                } else {
-                    deletedEdges ++;
-                }
-                if(i == 0){
-                    stepBack = true;
-                } else {
-                    i--;
-                }
+        if(find(edgesToBeDeleted.begin(), edgesToBeDeleted.end(), HEE[i]->twin) != edgesToBeDeleted.end()){
+            if(!((HEE[i] == e) || (HEE[i]->twin == e))){
+                cout << "-- Illegal twin " << HEE[i]->twin->id <<" of " << HEE[i]->id << endl;
             }
         }
     }
@@ -276,7 +327,6 @@ void Mesh::collapseEdge(HEEdge e){
 
 void Mesh::convertMesh()
 {
-    // Create HE Vertex for each normal vertex
     for (int i = 0; i < V.size(); i++) {
         HEVertex* v = new HEVertex();
         v->x = V[i].x;
@@ -300,7 +350,6 @@ void Mesh::convertMesh()
     
     for (int i = 0; i < F.size(); i++) {
         // Create 3 HE Edges and one HE Face
-//        HEFace f;
         HEFace *f = new HEFace();
         HEEdge *e1 = new HEEdge();
         HEEdge *e2 = new HEEdge();
@@ -321,11 +370,6 @@ void Mesh::convertMesh()
         int eIndex1 = (int)HEE.size()-3;
         int eIndex2 = (int)HEE.size()-2;
         int eIndex3 = (int)HEE.size()-1;
-//        
-//        cout << "Iteration " << i << endl;
-//        cout << "Vertex indexes: " << vIndex1 << ", " << vIndex2 << ", " << vIndex3 << endl;
-//        cout << "Edge indexes: " << eIndex1 << ", " << eIndex2 << ", " << eIndex3 << endl << endl;
-
         
         // Add adjacent edge to face
         HEF[i]->edge = HEE[eIndex1];
@@ -340,7 +384,7 @@ void Mesh::convertMesh()
         HEV[vIndex1]->edge = HEE[eIndex1];
         HEV[vIndex2]->edge = HEE[eIndex2];
         HEV[vIndex3]->edge = HEE[eIndex3];
-        
+
         // Assign vertex that each edge is pointing to
         HEE[eIndex1]->vert = HEV[vIndex2];
         HEE[eIndex2]->vert = HEV[vIndex3];
@@ -374,11 +418,8 @@ void Mesh::convertMesh()
     
 //     Loop through the half edge list, given a half edge, find its origin using the map
     for (int i = 0; i < HEE.size(); i++) {
-        
         for(int j = 0; j < PointedAtBy[HasOriginAt[i]].size(); j++){
-            
             if(HasOriginAt[PointedAtBy[HasOriginAt[i]][j]] == IsPointingTo[i]){
-//                cout << "Twin found for "<< HEE[i]->id+1 <<" as " << HEE[PointedAtBy[HasOriginAt[i]][j]]->id+1 << "" <<endl;
                 HEE[i]->twin = &(*HEE[PointedAtBy[HasOriginAt[i]][j]]);
                 break;
             }
@@ -388,9 +429,18 @@ void Mesh::convertMesh()
 
 void Mesh::revertMesh()
 {
+    
     V.clear();
     F.clear();
     map<int, int> locatedAt;
+//    vector<avgDistanceTuple> avgDistVector;
+    
+    for(int i = 0; i<HEE.size(); i++){
+        if(!(find(HEV.begin(), HEV.end(), HEE[i]->vert) != HEV.end())){
+            cout << "Can't find vert of edge " << HEE[i]->id << " which is " << HEE[i]->vert->id << endl;
+        }
+    }
+    
     for (int i = 0; i<HEV.size(); i++) {
         Vertex v;
         v.x = HEV[i]->x;
@@ -402,76 +452,130 @@ void Mesh::revertMesh()
     
     for(int i = 0; i<HEF.size(); i++){
         Face f;
-        vector<HEVertex> adjacentVerts = adjacentVertices(*HEF[i]);
-        f.a = locatedAt[adjacentVerts[0].id];
-        f.b = locatedAt[adjacentVerts[1].id];
-        f.c = locatedAt[adjacentVerts[2].id];
-//        cout << "Created face with vertices " << f.a << ", " << f.b << ", " << f.c << endl;
+        vector<HEVertex*> adjacentVerts = adjacentVertices(HEF[i]);
+
+        f.a = locatedAt[adjacentVerts[0]->id];
+        f.b = locatedAt[adjacentVerts[1]->id];
+        f.c = locatedAt[adjacentVerts[2]->id];
         F.push_back(f);
+        
+        if(locatedAt[adjacentVerts[0]->id] == 0){
+            cout << "Face " <<HEF[i]->id << " contains vertex " << adjacentVerts[0]->id << " not present in vertex list" << endl;
+        }
+        
+        if(locatedAt[adjacentVerts[1]->id] == 0){
+            cout << "Face " <<HEF[i]->id << " contains vertex " << adjacentVerts[1]->id << " not present in vertex list" << endl;
+        }
+        
+        if(locatedAt[adjacentVerts[2]->id] == 0){
+            cout << "Face " <<HEF[i]->id << " contains vertex " << adjacentVerts[2]->id << " not present in vertex list" << endl;
+        }
+        
+//        
+//        // Avståndet mellan vert 0 och 1
+//        float dist01 = (abs((float)(adjacentVerts[0]->x - adjacentVerts[1]->x)) + abs((float)(adjacentVerts[0]->y - adjacentVerts[1]->y)) + abs((float)(adjacentVerts[0]->z - adjacentVerts[1]->z)))/3;
+//        adjacentVerts[0]->x - adjacentVerts[1]->x + adjacentVerts[0]->y + adjacentVerts[0]->z;
+//        // Avståndet mellan vert 0 och 2
+//        float dist02 = (abs((float)(adjacentVerts[0]->x - adjacentVerts[2]->x)) + abs((float)(adjacentVerts[0]->y - adjacentVerts[2]->y)) + abs((float)(adjacentVerts[0]->z - adjacentVerts[2]->z)))/3;
+//        // Avståndet mellan vert 2 och 1
+//        float dist21 = (abs((float)(adjacentVerts[2]->x - adjacentVerts[1]->x)) + abs((float)(adjacentVerts[2]->y - adjacentVerts[1]->y)) + abs((float)(adjacentVerts[2]->z - adjacentVerts[1]->z)))/3;
+//        avgDistanceTuple avgDT {HEF[i], (dist01+dist02+dist21)/3};
+//        avgDistVector.push_back(avgDT);
+        
+//        cout << adjacentVerts[0]->id << " "<< adjacentVerts[1]->id << " "<< adjacentVerts[2]->id << " " << (dist01 + dist02 + dist21)/3 << endl;
+
+//
+//        if((f.a == locatedAt[300]) || (f.b == locatedAt[300]) || (f.c == locatedAt[300])){
+//            F.push_back(f);
+//        }
+//        if((f.a == locatedAt[2291]) || (f.b == locatedAt[2291]) || (f.c == locatedAt[2291])){
+//            F.push_back(f);
+//        }
+//        if((f.a == 1119) || (f.b == 1119) || (f.c == 1119)){
+//            cout << adjacentVerts[0]->x << " " << adjacentVerts[0]->y << " " << adjacentVerts[0]->z << endl;
+//            cout << adjacentVerts[1]->x << " " << adjacentVerts[1]->y << " " << adjacentVerts[1]->z << endl;
+//            cout << adjacentVerts[2]->x << " " << adjacentVerts[2]->y << " " << adjacentVerts[2]->z << endl << endl;
+//        }
+
     }
+//    sort(avgDistVector.begin(), avgDistVector.end(), avgDistanceTupleSort);
 }
-vector<HEEdge> Mesh::neighborEdges(HEFace* f){
-    vector<HEEdge> neighborEdges;
+vector<HEEdge*> Mesh::neighborEdges(HEFace *f){
+    vector<HEEdge*> neighborEdges;
     
-    HEEdge* firstEdge = f->edge;
-    HEEdge* nextEdge = firstEdge->next;
-    neighborEdges.push_back(*nextEdge);
+    if(!(find(HEE.begin(), HEE.end(), f->edge) != HEE.end())){
+        cout << "------- Edge not present in HEE "<< f->edge->id << endl;
+    }
+    
+    HEEdge *firstEdge = f->edge;
+    HEEdge *nextEdge = firstEdge->next;
+    neighborEdges.push_back(nextEdge);
+
     do{
         nextEdge = nextEdge->next;
-        neighborEdges.push_back(*nextEdge);
+        neighborEdges.push_back(nextEdge);
     } while(nextEdge->id != firstEdge->id);
     
     return neighborEdges;
 }
 
-vector<HEVertex> Mesh::neighborVertices(HEVertex v)
+vector<HEVertex*> Mesh::neighborVertices(HEVertex *v)
 {
-    // NeighborVertices of a vertex v, returns a vector of HEVertexes
-    // Look at what is in the end of each outgoing half edge vertex
-    vector<HEVertex> neighbourVerts;
+    vector<HEVertex*> neighbourVerts;
     
-    HEVertex *firstVertex = v.edge->vert;
-    HEEdge *nextEdge = v.edge;
+    HEVertex *firstVertex = v->edge->vert;
+    HEEdge *nextEdge = v->edge;
     
     do{
         nextEdge = nextEdge->twin->next;
-        neighbourVerts.push_back(*nextEdge->vert);
+        neighbourVerts.push_back(nextEdge->vert);
     } while(nextEdge->vert != firstVertex);
     
     return neighbourVerts;
 }
 
-
-
-vector<HEFace> Mesh::neighborFaces(HEVertex v)
-{
-    vector<HEFace> adjacentFaces;
+vector<HEEdge*> Mesh::associatedEdges(HEVertex *v){
+    vector<HEEdge*> edges;
     
-    HEEdge *firstEdge = v.edge;
-    adjacentFaces.push_back(*firstEdge->face);
+    HEEdge* firstEdge = v->edge;
+    HEEdge *nextEdge = firstEdge->twin->next;
+    edges.push_back(nextEdge);
+    
+    do{
+        nextEdge = nextEdge->twin->next;
+        edges.push_back(nextEdge);
+    } while(nextEdge->id != firstEdge->id);
+    
+    return edges;
+}
+
+vector<HEFace*> Mesh::neighborFaces(HEVertex *v)
+{
+    vector<HEFace*> adjacentFaces;
+    
+    HEEdge *firstEdge = v->edge;
+    adjacentFaces.push_back(firstEdge->face);
     
     HEEdge *nextEdge = firstEdge->twin->next;
     do{
-//        cout << "Pushing face " << nextEdge->face->id << endl;
-        adjacentFaces.push_back(*nextEdge->face);
+        adjacentFaces.push_back(nextEdge->face);
         nextEdge = nextEdge->twin->next;
     } while(nextEdge != firstEdge);
     
     return adjacentFaces;
 }
 
-vector<HEVertex> Mesh::adjacentVertices(HEFace f)
+vector<HEVertex*> Mesh::adjacentVertices(HEFace *f)
 {
-    // Get the vertices making up a face
-    vector<HEVertex> adjacentVerts;
+    vector<HEVertex*> adjacentVerts;
     
-    HEEdge *firstEdge = f.edge;
-    HEEdge *nextEdge = f.edge->next;
+    HEEdge *firstEdge = f->edge;
+    HEEdge *nextEdge = f->edge->next;
     
-    adjacentVerts.push_back(*firstEdge->vert);
-    
+    adjacentVerts.push_back(firstEdge->vert);
+//    cout << f->id << endl;
     do{
-        adjacentVerts.push_back(*nextEdge->vert);
+        adjacentVerts.push_back(nextEdge->vert);
         nextEdge = nextEdge->next;
     } while(nextEdge != firstEdge);
     
@@ -486,4 +590,50 @@ int Mesh::Vcnt(){
 int Mesh::Fcnt(){
     /* Half Edge Face */
 	return (int)HEF.size();
+}
+
+Mesh::Mesh(const char* filename){
+    loadMF(filename);
+}
+
+void Mesh::loadMF(const char* filename){
+    if(V.size()>0) V.clear();
+    if(F.size()>0) F.clear();
+    
+    ifstream infile;
+    infile.open(filename, ios::in);
+    
+    string strbuff;
+    while(getline(infile,strbuff)){
+        stringstream ss;
+        ss<<strbuff;
+        char type;
+        ss>>type;
+        if(type=='v'){
+            Vertex v;
+            ss>>v.x>>v.y>>v.z;
+            V.push_back(v);
+        }
+        else if(type=='f'){
+            Face f;
+            ss>>f.a>>f.b>>f.c;
+            F.push_back(f);
+        }
+    }
+    cout << "V size: " << V.size() << endl;
+    cout << "F size: " << F.size() << endl;
+    infile.close();
+}
+
+void Mesh::writeMF(const char* filename){
+    ofstream outfile;
+    outfile.open(filename, ios::out);
+    string strbuff;
+    for(uint i=0;i<V.size();i++){
+        outfile<<"v "<<V[i].x<<" "<<V[i].y<<" "<<V[i].z<<endl;
+    }
+    for(uint i=0;i<F.size();i++){
+        outfile<<"f "<<F[i].a<<" "<<F[i].b<<" "<<F[i].c<<endl;
+    }
+    outfile.close();
 }
