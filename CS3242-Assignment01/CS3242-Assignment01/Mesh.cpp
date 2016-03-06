@@ -272,6 +272,11 @@ void Mesh::collapseEdge(HEEdge *e){
         }
     }
     
+    // Reposition vertex
+    e->twin->vert->x = (e->twin->vert->x+e->vert->x)/2;
+    e->twin->vert->y = (e->twin->vert->y+e->vert->y)/2;
+    e->twin->vert->z = (e->twin->vert->z+e->vert->z)/2;
+    
     // Remove vertex
     for(int i = 0; i<HEV.size(); i++){
         if(HEV[i]->id == e->vert->id){
