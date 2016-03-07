@@ -188,7 +188,7 @@ void Mesh::simplifyMesh(const char* input, const char* output, int faceCnt){
             if(QList.size() == 1)break;
             if(edgeDeletionMap[QList[0]->e] || vertexDeletionMap[QList[0]->e->vert]){
                 QList.erase(QList.begin());
-                cout << "Disaster avoided!" << endl;
+                if(DEBUG)cout << "Disaster was trying to perform collapse of edge which has already been removed!" << endl;
             } else {
                 break;
             }
@@ -308,22 +308,25 @@ void Mesh::collapseEdge(HEEdge *e){
     vector<HEVertex*> vertsToBeUpdated;
     vector<HEVertex*> neighborVerts1 = neighbourVertsFromEdge(e);
     vector<HEVertex*> neighborVerts2 = neighbourVertsFromEdge(e->twin);
+//    vector<HEVertex*> neighborVerts1 = neighborVertices(e->vert);
+//    vector<HEVertex*> neighborVerts2 = neighborVertices(e->twin->vert);
     vertsToBeUpdated.insert(vertsToBeUpdated.end(), neighborVerts1.begin(), neighborVerts1.end());
     vertsToBeUpdated.insert(vertsToBeUpdated.end(), neighborVerts2.begin(), neighborVerts2.end());
-    //    vector<HEVertex*> neighborVerts1 = neighborVertices(e->vert);
-    //    vector<HEVertex*> neighborVerts2 = neighborVertices(e->twin->vert);
+
     
     // Update twin pairs
     if(DEBUG) cout << "Twin of " << e->next->twin->id;
     e->next->twin->twin = e->next->next->twin;
     if(DEBUG) cout << " set to " << e->next->twin->twin->id << " \n";
     
-    if(edgeDeletionMap[e->next->twin]){
-        cout << "Twin set to deleted edge " << endl;
-    }
-    
-    if(edgeDeletionMap[e->next->twin->twin]){
-        cout << "Twin set to deleted edge " << endl;
+    if(DEBUG){
+        if(edgeDeletionMap[e->next->twin]){
+            cout << "Twin set to deleted edge " << endl;
+        }
+        
+        if(edgeDeletionMap[e->next->twin->twin]){
+            cout << "Twin set to deleted edge " << endl;
+        }
     }
     
     if(DEBUG) cout << "Twin of " << e->next->next->twin->id;
@@ -387,13 +390,18 @@ void Mesh::collapseEdge(HEEdge *e){
     
     
     for( int i = 0; i < vertsToBeUpdated.size(); i++ ){
-        // Outgoing edge of vertex is going to be deleted
+        // Outgoing edge of vertex has been deleted
         if(find(HEE.begin(), HEE.end(), vertsToBeUpdated[i]->edge) != HEE.end()){
             
-            // Vertex is not the one which is going to be deleted
+            // Vertex is not the one which is going to be collapsed into
             if(!(vertsToBeUpdated[i]->id == e->vert->id)){
-                
-                // Peka om den jäveln
+                for(int j = 0; j<HEE.size(); j++){
+                    if(HEE[j]->vert == vertsToBeUpdated[i]){
+                        vertsToBeUpdated[i]->edge = HEE[j]->twin;
+                        break;
+                    }
+                }
+                // Find a new valid outgoing edge
                 do{
                     vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->next->next->twin;
                 } while(!(find(HEE.begin(), HEE.end(), vertsToBeUpdated[i]->edge) != HEE.end()));
@@ -403,145 +411,24 @@ void Mesh::collapseEdge(HEEdge *e){
                         cout << "--- Reassigned edge not in HEE vector, id "<< vertsToBeUpdated[i]->edge->id << endl;
                     }
                 }
-                // Vertex to be updated is the same vertex that is going to be removed.
             }
+
         } else {
+            // Find a new valid edge
             for(int j = 0; j<HEE.size(); j++){
                 if(HEE[j]->vert == vertsToBeUpdated[i]){
                     vertsToBeUpdated[i]->edge = HEE[j]->twin;
                     break;
                 }
             }
-            if(DEBUG) cout << "Does this ever occur?" << endl;
         }
     }
-    
-
-        
-
-//    // Reassign outgoing half edge for neighbourhood vertexes
-//    for( int i = 0; i < vertsToBeUpdated.size(); i++ ){
-//        
-//        // Outgoing edge of vertex has been deleted
-//        if(edgeDeletionMap[vertsToBeUpdated[i]->edge]){
-//            
-//            if(DEBUG)cout << "Ougoing edge of vertex "<< vertsToBeUpdated[i]->id << " has been deleted" << endl;
-//            
-//            if(!vertexDeletionMap[vertsToBeUpdated[i]]){
-//                
-//                if(DEBUG)cout << "Repointed from " << vertsToBeUpdated[i]->edge->id;
-//                
-//                do{
-//                    vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->twin->next;
-//                } while(edgeDeletionMap[vertsToBeUpdated[i]->edge]);
-//                if(DEBUG)cout << " to " << vertsToBeUpdated[i]->edge->id <<" "<< endl;
-//                
-//                if(DEBUG){
-//                    if(vertsToBeUpdated[i]->edge->twin->vert != vertsToBeUpdated[i]){
-//                        cout <<"------- RAISE THE ALARMS! ------- \nI am a valid edge who is not the twin of my sibling, meaning the twin of my outgoing edge is not pointing at me! My id is "<< vertsToBeUpdated[i]->id << "\n\n";
-//                    }
-//                }
-//            } else {
-//                // Vertex has also been deleted
-//                for(int j = 0; j<HEE.size(); j++){
-//                    if(HEE[j]->vert == vertsToBeUpdated[i]){
-//                        if(!edgeDeletionMap[HEE[j]->twin]){
-//                            vertsToBeUpdated[i]->edge = HEE[j]->twin;
-//                            break;
-//                        } else {
-//                            if(DEBUG){
-//                                cout << "Twin of valid edge has been deleted... " << endl;
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        
-//        }
-    
-    
-    
-    // ----------------------------------------------------------------------------------------------------
-    
-    
-    
-    
-        //            if(vertsToBeUpdated[i] == e->vert){
-        //                // Vertex will be deleted
-        //                do{
-        //                    vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->twin->next;
-        //                } while(edgeDeletionMap[vertsToBeUpdated[i]->edge]);
-        //
-        //            } else if (vertsToBeUpdated[i] == e->twin->vert){
-        //                //
-        //                for(int j = 0; j<HEE.size(); j++){
-        //                    if(HEE[j]->vert == vertsToBeUpdated[i]){
-        //                        if(!edgeDeletionMap[HEE[j]->twin]){
-        //                            vertsToBeUpdated[i]->edge = HEE[j]->twin;
-        //                            break;
-        //                        }
-        //                    }
-        //                }
-        //            } else {
-        //
-        //                do{
-        //                    vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->next->next->twin;
-        //
-        //                } while(edgeDeletionMap[vertsToBeUpdated[i]->edge]);
-        //            }
-        //
-        //        }
-        //
-        //
-        ////            do{
-        ////                vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->next->next->twin;
-        ////            }while(edgeDeletionMap[vertsToBeUpdated[i]->edge]);
-        //
-        //        }
-        //
-        //        if(find(HEE.begin(), HEE.end(), vertsToBeUpdated[i]->edge) != HEE.end()){
-        //
-        //            // Vertex is not the one which is going to be deleted
-        //            if(!(vertsToBeUpdated[i]->id == e->vert->id)){
-        //                // Repoint the edge to a valid edge
-        //                do{
-        //                    vertsToBeUpdated[i]->edge = vertsToBeUpdated[i]->edge->next->next->twin;
-        //                }while(edgeDeletionMap[vertsToBeUpdated[i]->edge]);
-        ////                } while(!(find(HEE.begin(), HEE.end(), vertsToBeUpdated[i]->edge) != HEE.end()));
-        //                // Vertex to be updated is the same vertex that is going to be removed.
-        //            } else {
-        //
-        //                // This vertex is going to be deleted, but for safety-reasons we repoint the edge anyway
-        //                for(int j = 0; j<HEE.size(); j++){
-        //                    if(HEE[j]->vert == vertsToBeUpdated[i]){
-        //                        vertsToBeUpdated[i]->edge = HEE[j]->twin;
-        //                        break;
-        //                    }
-        //                }
-        //            }
-        //        } else {
-        //            for(int j = 0; j<HEE.size(); j++){
-        //                if(HEE[j]->vert == vertsToBeUpdated[i]){
-        //                    if(find(HEE.begin(), HEE.end(), HEE[j]->twin) != HEE.end()){
-        //                        vertsToBeUpdated[i]->edge = HEE[j]->twin;
-        //                        break;
-        //                    }
-        //                }
-        //            }
-        //        }
-    
-//        if(DEBUG) {
-//            if(edgeDeletionMap[vertsToBeUpdated[i]->edge]){
-//                cout << "--- Reassigned edge not in HEE vector, id "<< vertsToBeUpdated[i]->edge->id << " for vertex "<< vertsToBeUpdated[i]->id <<" \n";
-//            }
-//        }
-//    }
     
     if(DEBUG){
         // Look for broken twin pairs
         for(int i = 0; i<HEE.size(); i++){
             if(HEE[i]->twin->twin->id != HEE[i]->id){
-                cout << "--- Broken twin pair between " << HEE[i]->id << " pointing at "<< HEE[i]->vert->id << " and " << HEE[i]->twin->id<< " pointing at "<< HEE[i]->twin->vert->id << " \n";
+                cout << "---- Broken twin pair between " << HEE[i]->id << " pointing at "<< HEE[i]->vert->id << " and " << HEE[i]->twin->id<< " pointing at "<< HEE[i]->twin->vert->id << " \n";
             }
         }
     }
@@ -550,7 +437,7 @@ void Mesh::collapseEdge(HEEdge *e){
         // Check if any of the valid edges are pointing to a deleted edge
         for(int i = 0; i<HEV.size(); i++){
             if(edgeDeletionMap[HEV[i]->edge]){
-                cout << "--- Outgoing edge of " << HEV[i]->id << " pointing at deleted edge " << HEV[i]->edge->id << " this means that the repointing algorithm isn't working as intended. \n" << endl;
+                cout << "---- Outgoing edge of " << HEV[i]->id << " pointing at deleted edge " << HEV[i]->edge->id << " this means that the repointing algorithm isn't working as intended. \n" << endl;
             }
         }
     }
@@ -568,7 +455,7 @@ void Mesh::collapseEdge(HEEdge *e){
     if(DEBUG){
         for(int i = 0; i<HEE.size(); i++){
             if(HEE[i]->next->next->next != HEE[i]){
-                cout << "---- Broken face with id " << HEE[i]->face->id << endl;
+                cout << "----- Broken face with id " << HEE[i]->face->id << endl;
             }
         }
     }
@@ -694,72 +581,53 @@ void Mesh::revertMesh()
     }
     
     
-    //    if(DEBUG){
-    for(int i = 0; i<HEE.size(); i++){
-        if(!(find(HEV.begin(), HEV.end(), HEE[i]->vert) != HEV.end())){
-//            HEE[i]->vert = HEE[i]->twin->next->next->vert;
-            cout << "Can't find vert of edge " << HEE[i]->id << " which is " << HEE[i]->vert->id << " \n";
-            
+    if(DEBUG){
+        for(int i = 0; i<HEE.size(); i++){
+            if(!(find(HEV.begin(), HEV.end(), HEE[i]->vert) != HEV.end())){
+                cout << "Can't find vert of edge " << HEE[i]->id << " which is " << HEE[i]->vert->id << " \n";
+            }
         }
     }
-    //    }
-    
+
     
     for(int i = 0; i<HEF.size(); i++){
         Face f;
         vector<HEVertex*> adjacentVerts = adjacentVertices(HEF[i]);
         
         if(locatedAt[adjacentVerts[0]->id] == 0){
-            cout << "Face " <<HEF[i]->id << " contains vertex " << adjacentVerts[0]->id << " not present in vertex list" << endl;
+            if(DEBUG) cout << "Face " <<HEF[i]->id << " contains vertex " << adjacentVerts[0]->id << " not present in vertex list \nTrying to fix the problem by looking at adjacent edges..." << endl;
             Vertex v;
             v.x = HEF[i]->edge->next->twin->vert->x;
             v.y = HEF[i]->edge->next->twin->vert->y;
             v.z = HEF[i]->edge->next->twin->vert->z;
             V.push_back(v);
-            locatedAt[adjacentVerts[0]->id] = V.size();
-//            f.a = V.size();
+            locatedAt[adjacentVerts[0]->id] = (int)V.size();
         }
         
         if(locatedAt[adjacentVerts[1]->id] == 0){
-            cout << "Face " <<HEF[i]->id << " contains vertex " << adjacentVerts[1]->id << " not present in vertex list" << endl;
+            if(DEBUG) cout << "Face " <<HEF[i]->id << " contains vertex " << adjacentVerts[1]->id << " not present in vertex list \nTrying to fix the problem by looking at adjacent edges..." << endl;
             Vertex v;
             v.x = HEF[i]->edge->twin->vert->x;
             v.y = HEF[i]->edge->twin->vert->y;
             v.z = HEF[i]->edge->twin->vert->z;
             V.push_back(v);
-            locatedAt[adjacentVerts[1]->id] = V.size();
-//            f.b = V.size();
+            locatedAt[adjacentVerts[1]->id] = (int)V.size();
         }
         
         if(locatedAt[adjacentVerts[2]->id] == 0){
-            cout << "Face " <<HEF[i]->id << " contains vertex " << adjacentVerts[2]->id << " not present in vertex list" << endl;
+            if(DEBUG) cout << "Face " <<HEF[i]->id << " contains vertex " << adjacentVerts[2]->id << " not present in vertex list \nTrying to fix the problem by looking at adjacent edges..." << endl;
             Vertex v;
             v.x = HEF[i]->edge->next->next->twin->vert->x;
             v.y = HEF[i]->edge->next->next->twin->vert->y;
             v.z = HEF[i]->edge->next->next->twin->vert->z;
             V.push_back(v);
-            locatedAt[adjacentVerts[2]->id] = V.size();
-//            f.c = V.size();
+            locatedAt[adjacentVerts[2]->id] = (int)V.size();
         }
         
         f.a = locatedAt[adjacentVerts[0]->id];
         f.b = locatedAt[adjacentVerts[1]->id];
         f.c = locatedAt[adjacentVerts[2]->id];
         F.push_back(f);
-        
-        if(DEBUG){
-            if(locatedAt[adjacentVerts[0]->id] == 0){
-                cout << "Face " <<HEF[i]->id << " contains vertex " << adjacentVerts[0]->id << " not present in vertex list" << endl;
-            }
-            
-            if(locatedAt[adjacentVerts[1]->id] == 0){
-                cout << "Face " <<HEF[i]->id << " contains vertex " << adjacentVerts[1]->id << " not present in vertex list" << endl;
-            }
-            
-            if(locatedAt[adjacentVerts[2]->id] == 0){
-                cout << "Face " <<HEF[i]->id << " contains vertex " << adjacentVerts[2]->id << " not present in vertex list" << endl;
-            }
-        }
     }
 }
 vector<HEEdge*> Mesh::neighborEdges(HEFace *f){
