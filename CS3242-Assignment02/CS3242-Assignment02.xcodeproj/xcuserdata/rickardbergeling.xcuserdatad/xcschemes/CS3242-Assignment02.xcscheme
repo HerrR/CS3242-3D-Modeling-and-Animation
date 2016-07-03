@@ -14,10 +14,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "183F953A1C64568100C3FCDE"
-               BuildableName = "CS3242-Assignment01"
-               BlueprintName = "CS3242-Assignment01"
-               ReferencedContainer = "container:CS3242-Assignment01.xcodeproj">
+               BlueprintIdentifier = "18AD5A0A1CA047BE00D6054C"
+               BuildableName = "CS3242-Assignment02"
+               BlueprintName = "CS3242-Assignment02"
+               ReferencedContainer = "container:CS3242-Assignment02.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -32,17 +32,17 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "183F953A1C64568100C3FCDE"
-            BuildableName = "CS3242-Assignment01"
-            BlueprintName = "CS3242-Assignment01"
-            ReferencedContainer = "container:CS3242-Assignment01.xcodeproj">
+            BlueprintIdentifier = "18AD5A0A1CA047BE00D6054C"
+            BuildableName = "CS3242-Assignment02"
+            BlueprintName = "CS3242-Assignment02"
+            ReferencedContainer = "container:CS3242-Assignment02.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
       </AdditionalOptions>
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Release"
+      buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
@@ -55,26 +55,12 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "183F953A1C64568100C3FCDE"
-            BuildableName = "CS3242-Assignment01"
-            BlueprintName = "CS3242-Assignment01"
-            ReferencedContainer = "container:CS3242-Assignment01.xcodeproj">
+            BlueprintIdentifier = "18AD5A0A1CA047BE00D6054C"
+            BuildableName = "CS3242-Assignment02"
+            BlueprintName = "CS3242-Assignment02"
+            ReferencedContainer = "container:CS3242-Assignment02.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-         <CommandLineArgument
-            argument = "/Users/rickardbergeling/GitHub/CS3242-3D-Modeling-and-Animation/CS3242-Assignment01/CS3242-Assignment01/data/bunny6000.mesh"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "/Users/rickardbergeling/GitHub/CS3242-3D-Modeling-and-Animation/CS3242-Assignment01/CS3242-Assignment01/data/output.obj"
-            isEnabled = "YES">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "600"
-            isEnabled = "YES">
-         </CommandLineArgument>
-      </CommandLineArguments>
       <AdditionalOptions>
       </AdditionalOptions>
    </LaunchAction>
@@ -88,10 +74,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "183F953A1C64568100C3FCDE"
-            BuildableName = "CS3242-Assignment01"
-            BlueprintName = "CS3242-Assignment01"
-            ReferencedContainer = "container:CS3242-Assignment01.xcodeproj">
+            BlueprintIdentifier = "18AD5A0A1CA047BE00D6054C"
+            BuildableName = "CS3242-Assignment02"
+            BlueprintName = "CS3242-Assignment02"
+            ReferencedContainer = "container:CS3242-Assignment02.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
